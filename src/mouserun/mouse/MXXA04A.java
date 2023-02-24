@@ -50,24 +50,131 @@ public class MXXA04A extends Mouse {
      */
     @Override
     public int move(Grid currentGrid, Cheese cheese) {
-        
-        Random random = new Random();
-        ArrayList<Integer> list = new ArrayList<Integer>();
-        if (currentGrid.canGoUp()) {
-            list.add(Mouse.UP);
+        //region Almacenamiento de la posicion
+            //Obtenemos la posicion x de la celda en la que se encuentra
+            Integer x = currentGrid.getX();
+            //Obtenemos la posicion y de la celda en la que se encuentra
+            Integer y = currentGrid.getY();
+            //Clase Pair le mandamos las posiciones obtenidas de la celda actual
+            Pair posiCelda = new Pair<>(x,y);
+        //endregion
+        //region Comprueba celda Visitada
+            //Comprobamos si celda visitada ha sido visitada.
+            //Caso no haber sido visitada
+            if(!celdasVisitadas.containsKey(posiCelda)){
+               //Lo metemos en el array celdas vistadas
+                celdasVisitadas.put(posiCelda,currentGrid);
+                //LLamamos al metodo de clase que hace que incremente el numero de celdas visitadas
+                this.incExploredGrids();
+            }
+        //endregion
+        //region Comprobador casillas adyacentes a  la casilla actual (Posibles Movimientos)
+            //Inicializamos un Arraylist para almacenar los Posibles Movimientos
+            ArrayList<Integer> movimientos = new ArrayList<>();
+            //region Casos
+                //Caso 1 (En caso de que vaya hacia arriba "y+1" )
+                Pair celdaSuperior = new Pair(x,y+1);
+                //Comprobamos si la casilla actual puede ir hacia arriba
+                //Y si no contiene la celda de arriba
+                if(currentGrid.canGoUp() && !celdasVisitadas.containsKey(celdaSuperior)){
+                    //Añadimos el movimiento hacia arriba
+                    movimientos.add(Mouse.UP);
+                }
+                //Caso 2 (En caso de que vaya hacia abajo "y-1" )
+                Pair celdaInferior = new Pair(x,y-1);
+                //Comprobamos si la casilla actual puede ir hacia abajo
+                //Y si no contiene la celda de abajo
+                if(currentGrid.canGoDown() && !celdasVisitadas.containsKey(celdaInferior)){
+                    //Añadimos el movimiento hacia a abajo
+                    movimientos.add(Mouse.DOWN);
+                }
+                //Caso 3 (En caso de que vaya hacia la derecha  "x+1" )
+                Pair celdaDerecha = new Pair(x+1,y);
+                //Comprobamos si la casilla actual puede ir hacia derecha
+                //Y si no contiene la celda de derecha
+                if(currentGrid.canGoRight() && !celdasVisitadas.containsKey(celdaDerecha)){
+                    //Añadimos el movimiento hacia la derecha
+                    movimientos.add(Mouse.RIGHT);
+                }
+                //Caso 4 (En caso de que vaya hacia la izquierda  "x-1" )
+                Pair celdaIzquierda = new Pair(x-1,y);
+                //Comprobamos si la casilla actual puede ir hacia izquierda
+                //Y si no contiene la celda de izquierda
+                if(currentGrid.canGoLeft() && !celdasVisitadas.containsKey(celdaIzquierda)){
+                    //Añadimos el movimiento hacia la izquierda
+                    movimientos.add(Mouse.LEFT);
+            }
+            //endregion
+        //endregion
+
+        //region
+        //Si el Arraylist de Movimientos no esta vacío
+        if(!movimientos.isEmpty()){
+            //Añadimos la Casilla actual  a la pila de movimientos
+            pilaMovimientos.add(currentGrid);
+            //Devolvemos el primero movimiento hecho
+            return movimientos.get(0);
         }
-        if (currentGrid.canGoDown()) {
-            list.add(Mouse.DOWN);
+        //Si el Arraylist de Movimientos  esta vacío
+        else{
+           //Recorremos la pila de movimientos
+            //Si no esta vacía
+            if(!pilaMovimientos.isEmpty()){
+                //Observamos la casilla anterior
+                Grid anterior = pilaMovimientos.pop();
+                //Comparamos el movimiento anterior y vemos si va a la izquierda
+                if (x-1 == anterior.getX()){
+                    //Si va hacia la izquierda se mueve hacia la izquierda
+                    return Mouse.LEFT;
+                }
+                //Comparamos el movimiento anterior y vemos si va a la derecha
+                if (x+1 == anterior.getX()){
+                    //Si va hacia la derecha se mueve hacia la derecha
+                    return Mouse.RIGHT;
+                }
+                //Comparamos el movimiento anterior y vemos si va hacia abajo
+                if (y-1 == anterior.getY()){
+                    //Si va hacia la derecha se mueve hacia la abajo
+                    return Mouse.DOWN;
+                }
+                //Comparamos el movimiento anterior y vemos si va hacia arriba
+                if (y+1 == anterior.getY()){
+                    //Si va hacia la derecha se mueve hacia la arriba
+                    return Mouse.UP;
+                }
+            }
+            //Recorremos la pila de movimientos
+            //Si  esta vacía es decir no tiene celdas(Inicio)
+            else{
+                //Inicializamos las celdas Adyancentes
+                ArrayList<Integer> celdasAdyacentes = new ArrayList<>();
+                //Comprobamos los posibles casos de movimientos
+                //Caso1 Puede mover para arriba
+                if (currentGrid.canGoUp()){
+                    celdasAdyacentes.add(Mouse.UP);
+                }
+                //Caso2 Puede mover para abajo
+                if (currentGrid.canGoDown()){
+                    celdasAdyacentes.add(Mouse.DOWN);
+                }
+                //Caso3 Puede mover para la izquierda
+                if (currentGrid.canGoLeft()){
+                    celdasAdyacentes.add(Mouse.LEFT);
+                }
+                //Caso4 Puede mover para la derecha
+                if (currentGrid.canGoRight()){
+                    celdasAdyacentes.add(Mouse.RIGHT);
+                }
+                //Creamos una posicion random para empezar
+                Random R = new Random();
+                Integer r = R.nextInt(celdasAdyacentes.size());
+
+                return celdasAdyacentes.get(r);
+            }
         }
-        if (currentGrid.canGoLeft()) {
-            list.add(Mouse.LEFT);
-        }
-        if (currentGrid.canGoRight()) {
-            list.add(Mouse.RIGHT);
-        }
-        list.add(Mouse.BOMB);
-        return random.nextInt(list.size());
-        
+        return 0;
+
+
     }
 
     /**
