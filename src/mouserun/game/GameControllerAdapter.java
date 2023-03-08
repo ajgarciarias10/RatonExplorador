@@ -49,7 +49,7 @@ public interface GameControllerAdapter
 	 * This method will be invoked at the end of the game. The mouse
 	 * represent should be removed.
 	 */
-	public void clearMouse();
+	public  void clearMouse();
 	
 	/**
 	 * This method will be invoked when a mouse planted a new bomb. The 

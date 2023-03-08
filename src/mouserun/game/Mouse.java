@@ -50,7 +50,7 @@ public abstract class Mouse
 	 */
 	public Mouse(String name)
 	{
-		this.name = name;
+				this.name = name;
                 this.exploredGrids = 0; // New: 01-21-2016
                 this.steps = 0; // New: 01-21-2016
 	}
@@ -131,5 +131,5 @@ public abstract class Mouse
 	 * Usually utilized for calibration.
 	 */
 	public abstract void respawned();
-	
+
 }

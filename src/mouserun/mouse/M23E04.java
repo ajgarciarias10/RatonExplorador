@@ -4,15 +4,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Stack;
-import mouserun.game.Mouse;
-import mouserun.game.Grid;
-import mouserun.game.Cheese;
+
+import mouserun.game.*;
 
 /**
  * Clase que contiene el esqueleto del raton base para las prácticas de
  * Inteligencia Artificial del curso 2020-21.
  *
- * @author Cristóbal José Carmona (ccarmona@ujaen.es)
+ * @author Antonio José García Arias , Manuel Cámara Serrano
  */
 public class M23E04 extends Mouse {
 
@@ -36,7 +35,7 @@ public class M23E04 extends Mouse {
      * Pila para almacenar el camino recorrido.
      */
     private final Stack<Grid> pilaMovimientos;
-
+    
     /**
      * Constructor (Puedes modificar el nombre a tu gusto).
      */
@@ -48,6 +47,8 @@ public class M23E04 extends Mouse {
     }
 
     /**
+     * 
+     * Metodo para el movimiento del raton
      */
     @Override
     public int move(Grid currentGrid, Cheese cheese) {
@@ -77,6 +78,14 @@ public class M23E04 extends Mouse {
             }
             //Si el Arraylist de Posible de Movimientos  (esta vacío) significa que está encerrado
             else{
+                /*
+                int casillastotales = GameController.maze.getWidth() * GameController.maze.getHeight() ;
+                if(casillastotales == celdasVisitadas.size()){
+                    celdasVisitadas.clear();
+                    
+                }
+                */
+                 
                 if(!pilaMovimientos.isEmpty()){
                     return  ultimoMov(x,y);
                 }
@@ -135,8 +144,6 @@ public class M23E04 extends Mouse {
      *
      */
     private void compruebaCeldaVisit(Pair posiCelda, Grid currentGrid) {
-        //Comprobamos si celda visitada ha sido visitada.
-        //Caso no haber sido visitada
         if(!celdasVisitadas.containsKey(posiCelda)){
             //Lo metemos en el HashMap  celdas vistadas
             celdasVisitadas.put(posiCelda,currentGrid);
@@ -144,6 +151,8 @@ public class M23E04 extends Mouse {
             //Para asi tener un conteo de ellas
             this.incExploredGrids();
         }
+     
+        
     }
 
     /**
@@ -171,7 +180,7 @@ public class M23E04 extends Mouse {
         if (currentGrid.canGoRight()){
             celdasAdyacentes.add(Mouse.RIGHT);
         }
-        //Creamos una posicion random para empezar
+        
         Random R = new Random();
         Integer r = R.nextInt(celdasAdyacentes.size());
 
@@ -214,7 +223,7 @@ public class M23E04 extends Mouse {
      */
     @Override
     public void newCheese() {
-        
+
     }
 
     /**
@@ -222,121 +231,8 @@ public class M23E04 extends Mouse {
      */
     @Override
     public void respawned() {
-        
-    }
+        //inicio(lastGrid);
 
-    /**
-     * @brief Método para evaluar que no nos movamos a la misma celda anterior
-     * @param direction Direccion del raton
-     * @param currentGrid Celda actual
-     * @return True Si las casillas X e Y anterior son distintas a las actuales
-     */
-    public boolean testGrid(int direction, Grid currentGrid) {
-        if (lastGrid == null) {
-            return true;
-        }
-        
-        int x = currentGrid.getX();
-        int y = currentGrid.getY();
-        
-        switch (direction) {
-            case UP:
-                y += 1;
-                break;
-            
-            case DOWN:
-                y -= 1;
-                break;
-            
-            case LEFT:
-                x -= 1;
-                break;
-            
-            case RIGHT:
-                x += 1;
-                break;
-        }
-        
-        return !(lastGrid.getX() == x && lastGrid.getY() == y);
-        
-    }
-
-    /**
-     *
-     * @brief Método que devuelve si de una casilla dada, está contenida en el
-     * mapa de celdasVisitadas
-     * @param casilla Casilla que se pasa para saber si ha sido visitada
-     * @param direccion Dirección de la casilla visitada
-     * @return True Si la casilla vecina que indica la dirección había sido
-     * visitada
-     */
-    public boolean visitada(Grid casilla, int direccion) {
-        int x = casilla.getX();
-        int y = casilla.getY();
-        
-        switch (direccion) {
-            case UP:
-                y += 1;
-                break;
-            
-            case DOWN:
-                y -= 1;
-                break;
-            
-            case LEFT:
-                x -= 1;
-                break;
-            
-            case RIGHT:
-                x += 1;
-                break;
-        }
-        Pair par = new Pair(x, y);
-        return celdasVisitadas.containsKey(par);
-    }
-
-    /**
-     * @brief Método para calcular si una casilla está en una posición relativa
-     * respecto a otra
-     * @param actual Celda actual
-     * @param anterior Celda anterior
-     * @return True Si la posición Y de la actual es mayor que la de la anterior
-     */
-    public boolean actualArriba(Grid actual, Grid anterior) {
-        return actual.getY() > anterior.getY();
-    }
-
-    /**
-     * @brief Método para calcular si una casilla está en una posición relativa
-     * respecto a otra
-     * @param actual Celda actual
-     * @param anterior Celda anterior
-     * @return True Si la posición Y de la actual es menor que la de la anterior
-     */
-    public boolean actualAbajo(Grid actual, Grid anterior) {
-        return actual.getY() < anterior.getY();
-    }
-
-    /**
-     * @brief Método para calcular si una casilla está en una posición relativa
-     * respecto a otra
-     * @param actual Celda actual
-     * @param anterior Celda anterior
-     * @return True Si la posición X de la actual es mayor que la de la anterior
-     */
-    public boolean actualDerecha(Grid actual, Grid anterior) {
-        return actual.getX() > anterior.getX();
-    }
-
-    /**
-     * @brief Método para calcular si una casilla está en una posición relativa
-     * respecto a otra
-     * @param actual Celda actual
-     * @param anterior Celda anterior
-     * @return True Si la posición X de la actual es menor que la de la anterior
-     */
-    public boolean actualIzquierda(Grid actual, Grid anterior) {
-        return actual.getX() < anterior.getX();
     }
 
     /**
