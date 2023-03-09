@@ -14,6 +14,18 @@ import mouserun.game.*;
  * @author Antonio José García Arias , Manuel Cámara Serrano
  */
 public class M23E04 extends Mouse {
+    /**
+     * Posicion x,y
+     */
+    private int x,y;
+    /**
+     * Par almacenador de  posicion x e y
+     */
+    private   Pair posiCelda;
+    /**
+     * Lista de posibles movimientos
+     */
+    private ArrayList<Integer> movimientos;
 
     /**
      * Variable para almacenar la ultima celda visitada
@@ -54,19 +66,19 @@ public class M23E04 extends Mouse {
     public int move(Grid currentGrid, Cheese cheese) {
         //region Almacenamiento de la posicion
             //Obtenemos la posicion x de la celda en la que se encuentra
-            Integer x = currentGrid.getX();
+             x = currentGrid.getX();
             //Obtenemos la posicion y de la celda en la que se encuentra
-            Integer y = currentGrid.getY();
+            y = currentGrid.getY();
             //Clase Pair le mandamos las posiciones obtenidas de la celda actual
-            Pair posiCelda = new Pair<>(x,y);
+            posiCelda = new Pair<>(x,y);
         //endregion
         //region Comprueba celda Visitada()
             compruebaCeldaVisit(posiCelda,currentGrid);
         //endregion
         //region Comprobador casillas adyacentes a  la casilla actual (Posibles Movimientos)
         //Inicializamos un Arraylist para almacenar los Posibles Movimientos
-        ArrayList<Integer> movimientos = new ArrayList<>();
-                posiblesMoves(x,y,currentGrid,movimientos);
+        movimientos = new ArrayList<>();
+        posiblesMoves(x,y,currentGrid,movimientos);
         //endregion
         //region Chequeador de movimientos()
             //Si el Arraylist de Movimientos no esta vacío añadimos el primer movimiento
@@ -78,24 +90,22 @@ public class M23E04 extends Mouse {
             }
             //Si el Arraylist de Posible de Movimientos  (esta vacío) significa que está encerrado
             else{
-                /*
-                int casillastotales = GameController.maze.getWidth() * GameController.maze.getHeight() ;
-                if(casillastotales == celdasVisitadas.size()){
-                    celdasVisitadas.clear();
-                    
-                }
-                */
-                 
-                if(!pilaMovimientos.isEmpty()){
-                    return  ultimoMov(x,y);
+                if(pilaMovimientos.size() == celdasVisitadas.size()){
+                     celdasVisitadas.clear();
                 }
                 else{
-                    return  inicio(currentGrid);
+                    if(!pilaMovimientos.isEmpty()){
+                        return  ultimoMov(x,y);
+                    }
+                    else{
+                        return  inicio(currentGrid);
+                    }
                 }
+
 
             }
         //endregion
-
+    return 0;
     }
     /**
      * @brief Método que comprueba los posibles movimientos a partir de su posicion actual
@@ -151,6 +161,7 @@ public class M23E04 extends Mouse {
             //Para asi tener un conteo de ellas
             this.incExploredGrids();
         }
+
      
         
     }
@@ -158,6 +169,7 @@ public class M23E04 extends Mouse {
     /**
      * @brief Método que se llama cuando la pila de movimientos está vacia
      *        y tambien esta vacia la lista de posibles movimientos
+     *        Devuelve un movimiento cualquiera para comenzar
      *
      */
     private Integer inicio(Grid currentGrid) {
@@ -187,6 +199,30 @@ public class M23E04 extends Mouse {
         return celdasAdyacentes.get(r);
     }
 
+/* region
+    public int obtenerDireccionMovimiento(Integer x, Integer y) {
+        if (pilaMovimientos.isEmpty()) {
+            throw new RuntimeException("La pila de movimientos está vacía");
+        }
+
+        Grid anterior = pilaMovimientos.pop();
+
+        int direccionMovimiento = 0;
+
+        if (x.compareTo(anterior.getX()) < 0) {
+            direccionMovimiento = Mouse.LEFT;
+        } else if (x.compareTo(anterior.getX()) > 0) {
+            direccionMovimiento = Mouse.RIGHT;
+        } else if (y.compareTo(anterior.getY()) < 0) {
+            direccionMovimiento = Mouse.DOWN;
+        } else if (y.compareTo(anterior.getY()) > 0) {
+            direccionMovimiento = Mouse.UP;
+        }
+
+        return direccionMovimiento;
+    }
+endregion*/
+
     /**
      * @brief Método que se llama cuando la pila de movimientos no está vacia
      *
@@ -195,6 +231,8 @@ public class M23E04 extends Mouse {
         int resultado = 0;
         //Observamos la casilla anterior
         Grid anterior = pilaMovimientos.pop();
+
+
         //Comparamos el movimiento anterior y vemos si va a la izquierda
         if (x-1 == anterior.getX()){
             //Si va hacia la izquierda se mueve hacia la izquierda
@@ -231,8 +269,8 @@ public class M23E04 extends Mouse {
      */
     @Override
     public void respawned() {
-        //inicio(lastGrid);
-
+        celdasVisitadas.clear();
+        inicio(lastGrid);
     }
 
     /**
