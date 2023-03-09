@@ -90,9 +90,12 @@ public class M23E04 extends Mouse {
             }
             //Si el Arraylist de Posible de Movimientos  (esta vacío) significa que está encerrado
             else{
+                //En el caso de que la pila de movimientos y la de celdas visitadas sea su tamaño igual
+                //Significa que el raton ha recorrido todas las celdas
                 if(pilaMovimientos.size() == celdasVisitadas.size()){
                      celdasVisitadas.clear();
                 }
+                //Comprobamos si la pila no esta vacía para asi ver su ultimo movimiento o vemos si acaba de iniciarse el raotn
                 else{
                     if(!pilaMovimientos.isEmpty()){
                         return  ultimoMov(x,y);
