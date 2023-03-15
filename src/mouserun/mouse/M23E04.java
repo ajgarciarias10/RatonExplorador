@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Random;
 import java.util.Stack;
 
+import mouserun.functions.Pair;
 import mouserun.game.*;
 
 /**
@@ -21,7 +22,7 @@ public class M23E04 extends Mouse {
     /**
      * Par almacenador de  posicion x e y
      */
-    private   Pair posiCelda;
+    private Pair posiCelda;
     /**
      * Lista de posibles movimientos
      */
@@ -32,10 +33,6 @@ public class M23E04 extends Mouse {
      */
     private Grid lastGrid;
 
-    /**
-     * Variable para guardar el anterior movimiento realizado
-     */
-    private int movAnterior;
 
     /**
      * Tabla hash para almacenar las celdas visitadas por el raton:
@@ -164,9 +161,6 @@ public class M23E04 extends Mouse {
             //Para asi tener un conteo de ellas
             this.incExploredGrids();
         }
-
-     
-        
     }
 
     /**
@@ -201,30 +195,6 @@ public class M23E04 extends Mouse {
 
         return celdasAdyacentes.get(r);
     }
-
-/* region
-    public int obtenerDireccionMovimiento(Integer x, Integer y) {
-        if (pilaMovimientos.isEmpty()) {
-            throw new RuntimeException("La pila de movimientos está vacía");
-        }
-
-        Grid anterior = pilaMovimientos.pop();
-
-        int direccionMovimiento = 0;
-
-        if (x.compareTo(anterior.getX()) < 0) {
-            direccionMovimiento = Mouse.LEFT;
-        } else if (x.compareTo(anterior.getX()) > 0) {
-            direccionMovimiento = Mouse.RIGHT;
-        } else if (y.compareTo(anterior.getY()) < 0) {
-            direccionMovimiento = Mouse.DOWN;
-        } else if (y.compareTo(anterior.getY()) > 0) {
-            direccionMovimiento = Mouse.UP;
-        }
-
-        return direccionMovimiento;
-    }
-endregion*/
 
     /**
      * @brief Método que se llama cuando la pila de movimientos no está vacia
@@ -276,56 +246,4 @@ endregion*/
         inicio(lastGrid);
     }
 
-    /**
-     *
-     * @author josema
-     * @param <U> First field (key) in a Pair
-     * @param <V> Second field (value) in a Pair
-     */
-// Pair class
-    class Pair<U, V> {
-
-        public final U first;       // el primer campo de un par
-        public final V second;      // el segundo campo de un par
-
-        // Construye un nuevo par con valores especificados
-        private Pair(U first, V second) {
-            this.first = first;
-            this.second = second;
-        }
-        
-        @Override
-        // Verifica que el objeto especificado sea "igual a" el objeto actual o no
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            
-            Pair<?, ?> pair = (Pair<?, ?>) o;
-
-            // llamar al método `equals()` de los objetos subyacentes
-            if (!first.equals(pair.first)) {
-                return false;
-            }
-            return second.equals(pair.second);
-        }
-        
-        @Override
-        // Calcula el código hash de un objeto para admitir tablas hash
-        public int hashCode() {
-            // usa códigos hash de los objetos subyacentes
-            return 31 * first.hashCode() + second.hashCode();
-        }
-        
-        @Override
-        public String toString() {
-            return "(" + first + ", " + second + ")";
-        }
-        
-    }
-    
 } // class M23E04
