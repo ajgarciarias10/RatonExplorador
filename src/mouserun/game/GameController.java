@@ -34,7 +34,7 @@ public class GameController
 
 	public static Maze maze;
 	private int gridSize;
-	private Cheese cheese;
+	public  static Cheese cheese;
 	private GameControllerAdapter adapter;
 	private ArrayList<MouseController> mouseList;
 	private ArrayList<Bomb> bombList;
