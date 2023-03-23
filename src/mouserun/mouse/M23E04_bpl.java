@@ -56,7 +56,6 @@ public class M23E04_bpl extends Mouse  {
             //En el caso que no se haya encontrado revisamos la siguientes casuisticas
             } else {
                 //Si la profundidad del nodo anterior es mayor o igual que la profundidad maxima
-                // O se ha visitado el nodo pues salimos del bucle
                 //No podemos expandir el nodo ya que ha superado la profundidad maxima(10)
                 if (nodoAnterior.profundidad >= profundidadMaxima) {
                     break; // No se expande este nodo
