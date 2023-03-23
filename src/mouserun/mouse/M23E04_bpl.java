@@ -58,11 +58,7 @@ public class M23E04_bpl extends Mouse  {
                 //Si la profundidad del nodo anterior es mayor o igual que la profundidad maxima
                 //No podemos expandir el nodo ya que ha superado la profundidad maxima(10)
                 if (nodoAnterior.profundidad >= profundidadMaxima) {
-                    continue; // No se expande este nodo
-                }
-                //No podemos expandir el nodo ya que ese nodo ya ha sido visitado
-                if (celdasVisitadas.containsKey(nodoAnterior.casilla)) {
-                    continue; // No se expande este nodo
+                    break; // No se expande este nodo
                 }
                 //En el caso de que no expandimos las casillas
                 else{
