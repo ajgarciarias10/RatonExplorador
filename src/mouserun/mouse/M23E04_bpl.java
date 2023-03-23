@@ -7,7 +7,7 @@ public class M23E04_bpl extends Mouse  {
     /**
      * Definimos la profundidad Maxima
      */
-     private int profundidadMaxima =  0;
+     private int profundidadMaxima = 10;
     /**
      * Vemos si se ha encontrado el queso
      */
@@ -38,7 +38,7 @@ public class M23E04_bpl extends Mouse  {
         celdasVisitadas = new HashMap<>();
         pilaMovimientos = new Stack<>();
         posMovi = new ArrayList<>();
-        piladeNodos = new Stack<Nodo>();
+        piladeNodos = new Stack<>();
     }
 
     @Override
@@ -47,33 +47,41 @@ public class M23E04_bpl extends Mouse  {
         //Mientras no encuentre queso y la pila de nodos no este vacia
         //Buscamos el queso
         while (!quesoEncontrado && !piladeNodos.isEmpty()) {
-            //Cogemos el nodo anterior
+            //Miramos el nodo anterior
             Nodo nodoAnterior = piladeNodos.pop();
-
-            //Comprobamos que ha pillado el queso
+            //Si estamos en la casilla del queso el queso se ha encontrado
             if (compruebaQueso(nodoAnterior.casilla, cheese)) {
                 quesoEncontrado = true;
                 break;
-            }
-            //Si no lo pilla
-            else{
-                //Si el nodoAnterior la profundidad es mejor que la profundidad maxima
-                //Signfica
-                if (nodoAnterior.profundidad < profundidadMaxima) {
-                    if (nodoAnterior.casilla == null) {
-                        break;
-                    } if(celdasVisitadas.containsKey(nodoAnterior.casilla)) {
-                        break;
-                    }else {
-                        for (Grid childGrid : obtenerHijos(nodoAnterior)) {
-                            Nodo nodohijo = new Nodo(childGrid, nodoAnterior, nodoAnterior.profundidad + 1);
-                            piladeNodos.push(nodohijo);
+            //En el caso que no se haya encontrado revisamos la siguientes casuisticas
+            } else {
+                //Si la profundidad del nodo anterior es mayor o igual que la profundidad maxima
+                //No podemos expandir el nodo ya que ha superado la profundidad maxima(10)
+                if (nodoAnterior.profundidad >= profundidadMaxima) {
+                    continue; // No se expande este nodo
+                }
+                //No podemos expandir el nodo ya que ese nodo ya ha sido visitado
+                if (celdasVisitadas.containsKey(nodoAnterior.casilla)) {
+                    continue; // No se expande este nodo
+                }
+                //En el caso de que no expandimos las casillas
+                else{
+                    //Inicializamos Arraylist  la lista de posibles nodos hijos(Casillas)
+                    ArrayList<Grid> posCasillas = obtenerHijos(nodoAnterior);
+                    //Recorremos las posibles casillas hijos
+                    for (Grid casillasHijos : posCasillas) {
+                        //Creamos el nodo hijo
+                        Nodo nodohijo = new Nodo(casillasHijos, nodoAnterior, nodoAnterior.profundidad + 1);
+                        //Si es nodo hijo su profundidad es menor o igual que la maxima la añadimos
+                        if (nodohijo.profundidad <= profundidadMaxima) {
+                            piladeNodos.push(nodohijo); // Se agrega el hijo solo si no se supera el límite de profundidad
                         }
                     }
                 }
+
             }
-            profundidadMaxima++;
         }
+
         return movimientodelratonsito(currentGrid);
     }
 
@@ -113,30 +121,39 @@ public class M23E04_bpl extends Mouse  {
         }
 
     }
-    List<Grid> obtenerHijos(Nodo node) {
-        List<Grid> children = new ArrayList<>();
+    /**
+    *   Metodo utilizado para  devolver los posibles nodos hijos como un arraylist de casillas
+     *
+     */
+    ArrayList<Grid> obtenerHijos(Nodo node) {
+        ArrayList<Grid> nodosHijos = new ArrayList<>();
         try {
             if (node.casilla.canGoUp()){
-                children.add(new Grid(node.casilla.getX(), node.casilla.getY()+1));
+                Grid casillaHaciaArriba = new Grid(node.casilla.getX(), node.casilla.getY()+1);
+                nodosHijos.add(casillaHaciaArriba);
             }
             //Caso2 Puede mover para abajo
             if (node.casilla.canGoDown()){
-                children.add(new Grid(node.casilla.getX(), node.casilla.getY()-1));
+                Grid casillaHaciaAbajo = new Grid(node.casilla.getX(), node.casilla.getY()-1);
+                nodosHijos.add(casillaHaciaAbajo);
             }
             //Caso3 Puede mover para la izquierda
             if (node.casilla.canGoLeft()){
-                children.add(new Grid(node.casilla.getX() -1 , node.casilla.getY()));
+                Grid casillaHaciaIzq = new Grid(node.casilla.getX() -1, node.casilla.getY());
+                nodosHijos.add(casillaHaciaIzq);
             }
             //Caso4 Puede mover para la derecha
             if (node.casilla.canGoRight()){
-                children.add(new Grid(node.casilla.getX() +1, node.casilla.getY()));
+                Grid casillaHaciaDerec = new Grid(node.casilla.getX() +1, node.casilla.getY());
+                nodosHijos.add(casillaHaciaDerec);
             }
+
 
         }catch (Exception e){
             e.getMessage();
         }
+        return nodosHijos;
 
-        return children;
     }
 
     /**
@@ -305,7 +322,6 @@ public class M23E04_bpl extends Mouse  {
 class Nodo {
     Grid casilla;
     Nodo padre;
-
     int profundidad;
     public Nodo(Grid casilla, Nodo padre, int profundidad) {
         this.casilla = casilla;
