@@ -56,8 +56,9 @@ public class M23E04_bpl extends Mouse  {
             //En el caso que no se haya encontrado revisamos la siguientes casuisticas
             } else {
                 //Si la profundidad del nodo anterior es mayor o igual que la profundidad maxima
+                // O se ha visitado el nodo pues salimos del bucle
                 //No podemos expandir el nodo ya que ha superado la profundidad maxima(10)
-                if (nodoAnterior.profundidad >= profundidadMaxima) {
+                if (nodoAnterior.profundidad >= profundidadMaxima || celdasVisitadas.containsKey(nodoAnterior.casilla)) {
                     break; // No se expande este nodo
                 }
                 //En el caso de que no expandimos las casillas
@@ -97,7 +98,16 @@ public class M23E04_bpl extends Mouse  {
          */
         if (posMovi.isEmpty()) {
             if (pilaMovimientos.isEmpty()) {
-                return inicio(currentGrid);
+                //En el caso de que la pila de movimientos este vacia 1 de 2
+                //O no tiene mas celdas que visitar
+                if(celdasVisitadas.size()>0){
+                    celdasVisitadas.clear();
+                }
+                //O esta en el inicio
+               else{
+                    return inicio(currentGrid);
+                }
+
             }
             //En el caso de que no significa que esta encerrado
             else {
@@ -116,6 +126,7 @@ public class M23E04_bpl extends Mouse  {
 
         }
 
+        return 0;
     }
     /**
     *   Metodo utilizado para  devolver los posibles nodos hijos como un arraylist de casillas
@@ -297,6 +308,9 @@ public class M23E04_bpl extends Mouse  {
             //Si va hacia la derecha se mueve hacia la arriba
             resultado =  Mouse.UP;
         }
+
+        
+        
         return resultado;
     }
 
