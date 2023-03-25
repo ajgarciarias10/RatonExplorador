@@ -7,7 +7,7 @@ public class M23E04_bpl extends Mouse  {
     /**
      * Definimos la profundidad Maxima
      */
-     private int profundidadMaxima = 10;
+     private int profundidadMaxima = 100;
     /**
      * Vemos si se ha encontrado el queso
      */
@@ -43,43 +43,61 @@ public class M23E04_bpl extends Mouse  {
 
     @Override
     public int move(Grid currentGrid, Cheese cheese) {
+                //Agregamos el Nodo Padre
+                Nodo nodoEntrada = new Nodo(currentGrid, null, 0);
+                piladeNodos.push(nodoEntrada);
+                //Mientras la pila no este vacía
+                while(!piladeNodos.isEmpty()) {
+                    //Miramos el nodo primeroPila, lo sacamos y lo borramos
+                    Nodo nodoPrimeroPila = piladeNodos.pop();
+                    if (compruebaQueso(nodoPrimeroPila.casilla, cheese)) {
+                        int movimiento = 0;
+                        //Devolvemos el camino
+                        ArrayList<Grid> camino = new ArrayList<>();
+                        Nodo nododelcamino = nodoPrimeroPila;
+                        while (nododelcamino.padre != null) {
 
-        //Mientras no encuentre queso y la pila de nodos no este vacia
-        //Buscamos el queso
-        while (!quesoEncontrado && !piladeNodos.isEmpty()) {
-            //Miramos el nodo anterior
-            Nodo nodoAnterior = piladeNodos.pop();
-            //Si estamos en la casilla del queso el queso se ha encontrado
-            if (compruebaQueso(nodoAnterior.casilla, cheese)) {
-                quesoEncontrado = true;
-                break;
-            //En el caso que no se haya encontrado revisamos la siguientes casuisticas
-            } else {
-                //Si la profundidad del nodo anterior es mayor o igual que la profundidad maxima
-                //No podemos expandir el nodo ya que ha superado la profundidad maxima(10)
-                if (nodoAnterior.profundidad >= profundidadMaxima) {
-                    break; // No se expande este nodo
-                }
-                //En el caso de que no expandimos las casillas
-                else{
-                    //Inicializamos Arraylist  la lista de posibles nodos hijos(Casillas)
-                    ArrayList<Grid> posCasillas = obtenerHijos(nodoAnterior);
-                    //Recorremos las posibles casillas hijos
-                    for (Grid casillasHijos : posCasillas) {
-                        //Creamos el nodo hijo
-                        Nodo nodohijo = new Nodo(casillasHijos, nodoAnterior, nodoAnterior.profundidad + 1);
-                        //Si es nodo hijo su profundidad es menor o igual que la maxima la añadimos
-                        if (nodohijo.profundidad <= profundidadMaxima) {
-                            piladeNodos.push(nodohijo); // Se agrega el hijo solo si no se supera el límite de profundidad
+                            camino.add(nododelcamino.casilla);
+                            //Volvemos atras
+                            nododelcamino = nododelcamino.padre;
+                        }
+                        Collections.reverse(camino);
+                        // Movemos el ratón por el camino de vuelta
+                        for (Grid casilla : camino) {
+                            movimiento = movimientodelratonsito(casilla);
+                        }
+                        return movimiento;
+
+                    } else {
+                        if (nodoPrimeroPila.profundidad >= profundidadMaxima) {
+                            return  movimientodelratonsito(currentGrid);
+                        } else {
+                            //Tiene Hijos?
+                            //Inicializamos Arraylist  la lista de posibles nodos hijos(Casillas)
+                            ArrayList<Grid> posCasillas = obtenerHijos(nodoPrimeroPila);
+                            if (posCasillas.isEmpty()) {
+                                if(piladeNodos.isEmpty()) {
+                                    return  movimientodelratonsito(currentGrid);
+                                }
+                                else {
+                                    break;
+                                }
+                            } else {
+                                //Recorremos las posibles casillas hijos
+                                for (Grid casillasHijos : posCasillas) {
+                                    //Creamos el nodo hijo
+                                    Nodo nodohijo = new Nodo(casillasHijos, nodoPrimeroPila, nodoPrimeroPila.profundidad + 1);
+                                    //Si es nodo hijo su profundidad es menor o igual que la maxima la añadimos
+                                    piladeNodos.push(nodohijo); // Se agrega el hijo solo si no se supera el límite de profundidad
+                                }
+                            }
+
                         }
                     }
                 }
-
-            }
-        }
-
-        return movimientodelratonsito(currentGrid);
+            return movimientodelratonsito(currentGrid);
     }
+
 
 
         /**
@@ -225,9 +243,7 @@ public class M23E04_bpl extends Mouse  {
         //En funcion de las posibilidades realiza un movimiento aleatorio
         Random R = new Random();
         Integer r = R.nextInt(celdasAdyacentes.size());
-        //Agregamos el Nodo Padre
-        Nodo nodoEntrada = new Nodo(currentGrid,null,0);
-        piladeNodos.push(nodoEntrada);
+
         
         return celdasAdyacentes.get(r);
     }
