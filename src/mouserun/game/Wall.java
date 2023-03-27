@@ -88,5 +88,5 @@ public class Wall
 	{
 		this.opened = opened;
 	}
-	
+
 }
