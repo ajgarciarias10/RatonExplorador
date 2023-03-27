@@ -8,80 +8,109 @@ public class M23E04_bpl extends Mouse  {
     /**
      * HashMap de Celdas Cerradas
      */
-    private final HashMap<Pair<Integer, Integer>, Grid> celdasCerradas = new HashMap<>();
+    private final HashMap<Pair<Integer, Integer>, Grid> celdasCerradas ;
     /**
      * Definimos la profundidad Maxima
      */
-    private static final int MAX_PROFUNDIDAD = 4;
+    private static final int MAX_PROFUNDIDAD = 20;
     /**
      * Nuevo queso util para cuando se cambie el queso
      */
     private   boolean nuevoQueso;
 
-    /**
-     * Lista de posibles movimientos
-     */
-
    /**
             * Tabla hash para almacenar las celdas visitadas por el raton:
             * Clave:Coordenadas Valor: La celda
     */
-    private final HashMap<Pair<Integer, Integer>, Grid> celdasVisitadas = new HashMap<>();
+    private final HashMap<Pair<Integer, Integer>, Grid> celdasVisitadas ;
 
     /**
      * Pila para almacenar el camino recorrido.
      */
-    private final Stack<Grid> pilaMovimientos = new Stack<>();
+    private final Stack<Grid> pilaMovimientos ;
 
     /**
      * Pila de nodos camino
      */
 
-    private Stack<Grid> caminoBusqueda = new Stack<>();
+    private Stack<Grid> caminoBusqueda ;
 
+    /**
+     * Constructor
+     */
     public M23E04_bpl() {
         super("Ratón Vacilon");
+        celdasVisitadas = new HashMap<>();
+        pilaMovimientos = new Stack<>();
+        caminoBusqueda = new Stack<>();
+        celdasCerradas = new HashMap<>();
     }
 
-
+    /**
+     *  Método implementado del raton
+     */
     @Override
     public int move(Grid currentGrid, Cheese cheese) {
         //region Comprueba con el metodo isCeldaVisit y la marca
-        insertaCeldaVisitada(currentGrid);
+            insertaCeldaVisitada(currentGrid);
         //endregion
-        //¿Posicion del queso conocida?
+        //region ¿Posicion del queso conocida?
         if(!celdasVisitadas.containsKey(new Pair<>(cheese.getX(),cheese.getY()))){
             return explorar(currentGrid);
         }
+        //endregion
+        //region Calculo + Ejecucion
         else {
-            //Recalcular
-            if(nuevoQueso){
-                //camino.clear();
-                nuevoQueso = false;
-                //Calcular busqueda
-                int multiplicador=1;
-                while(!busquedaProfundidadLimitada(currentGrid,cheese, MAX_PROFUNDIDAD*multiplicador)){
-                    multiplicador++;
+            //region Calculo Recursivo
+                if(nuevoQueso){
+                    nuevoQueso = false;
+                    //Calcular busqueda
+                    int multiplicador=1;
+                    while(!busquedaProfundidadLimitada(currentGrid,cheese, MAX_PROFUNDIDAD*multiplicador)){
+                        multiplicador++;
+                    }
                 }
-            }
-            return actToNext(currentGrid, caminoBusqueda.pop()); // Ejecutar busqueda
+            //endregion
+            //region Ejecucion del calculo
+                return actToNext(currentGrid, caminoBusqueda.pop()); // Ejecutar busqueda
+            //endregion
+        }
+       //endregion
+    }
+
+    /**
+     *  Método que comprueba la celda visitada
+     */
+
+    private boolean isCeldaVisitada(Grid currentGrid) {
+        return celdasVisitadas.containsKey(new Pair<>(currentGrid.getX(),currentGrid.getY()));
+    }
+    /**
+     * @brief Primer método utilizado insertar celda visitada
+     *
+     */
+    private void insertaCeldaVisitada(Grid currentGrid) {
+        if(!isCeldaVisitada(currentGrid)){
+            Pair celdaVisitada= new Pair<>(currentGrid.getX(),currentGrid.getY());
+            //Lo metemos en el HashMap  celdas vistadas
+            celdasVisitadas.put(celdaVisitada,currentGrid);
+            //LLamamos al metodo de clase que hace que incremente el numero de celdas visitadas
+            //Para asi tener un conteo de ellas
+            this.incExploredGrids();
         }
     }
 
-    @Override
-    public void newCheese() {
-        nuevoQueso = true;
-
-        celdasCerradas.clear();
-        caminoBusqueda.clear();
-        // ñññ Cuando aparece un nuevo queso si este no estuviera en las celdas visitadas  tendriamos que volver a explorar
-        // ¿sería necesario reiniciar la pila de movimientos de la exploración? Parece que no que
-        //movimientosEnExploracion.clear();
-
-    }
-
+    /**
+     * Metodo de Busqueda de profundidad limitada
+     * @param currentGrid
+     * @param cheese
+     * @param profundidadMax
+     * @return
+     */
     private Boolean busquedaProfundidadLimitada(Grid currentGrid, Cheese cheese,int profundidadMax) {
+        //Insertamos la casilla actual en el camino
         caminoBusqueda.push(currentGrid);
+        //Cerrar nodo
         insertaCerradas(currentGrid);
         if(busquedaprofundidadBis(currentGrid,cheese,profundidadMax)){
             caminoBusqueda = revertirStack(caminoBusqueda);
@@ -93,18 +122,12 @@ public class M23E04_bpl extends Mouse  {
         }
     }
 
-    public static Stack<Grid> revertirStack(Stack<Grid> stack) {
-
-        Stack<Grid> stackRevertido = new Stack<>();
-        while (!stack.isEmpty()) {
-            stackRevertido.push(stack.pop());
-        }
-
-        return stackRevertido;
-
-    }
-
-
+    /**
+     * Metodo de Busqueda recursiva en el que obtenemos los hijos
+     * @param currentGrid
+     * @param cheese
+     * @param profundidad
+     */
     private boolean busquedaprofundidadBis(Grid currentGrid,Cheese cheese,int profundidad) {
         // ¿Está el queso aquí?
         if (compruebaQueso(currentGrid,cheese)) {
@@ -129,68 +152,14 @@ public class M23E04_bpl extends Mouse  {
     }
 
 
-    private void insertaCerradas(Grid currentGrid) {
-        celdasCerradas.put(new Pair<>(currentGrid.getX(), currentGrid.getY()),currentGrid);
-    }
-
-
-    private int explorar(Grid currentGrid){
-
-        //Crear los posibles movimientos teniendo en cuenta visitadas y lo almacena en posmovi
-        List<Integer> posMovi = creaPosiblesMovimientos(currentGrid);
-        /**
-         * Casos de donde puede estar el raton en funcion de su posicion
-         */
-        return devolvermovimiento(currentGrid,posMovi);
-    }
-
-    private int devolvermovimiento(Grid currentGrid,List<Integer> posMovi){
-        //Inicio
-        if(pilaMovimientos.isEmpty()){
-            pilaMovimientos.push(currentGrid);
-            //En funcion de las posibilidades realiza un movimiento aleatorio
-            return posMovi.get(new Random().nextInt(posMovi.size()));
-            //return inicio(currentGrid);
-        }
-        //Se esta moviendo o esta moviAnteriorPila
-        else{
-            if(posMovi.isEmpty())
-                return actToNext(currentGrid, pilaMovimientos.pop());
-            //Se esta moviendo
-            else{
-                //Añadimos la Casilla actual  a la pila de movimientos
-                pilaMovimientos.push(currentGrid);
-                //Devolvemos el primero movimiento hecho
-                return posMovi.get(0);
-            }
-        }
-    }
-
     /**
-     * ¿Se ha encontrado el queso?
+     * ¿Se ha encontrado el queso en la casilla actual?
      */
     private boolean compruebaQueso(Grid casillaActual,Cheese chesse){
         return (casillaActual.getX() == chesse.getX() && casillaActual.getY() == chesse.getY());
     }
 
 
-    private boolean isCeldaVisitada(Grid currentGrid) {
-        return celdasVisitadas.containsKey(new Pair<>(currentGrid.getX(),currentGrid.getY()));
-    }
-    /**
-     * @brief Método que comprueba la celda visitada
-     *
-     */
-    private void insertaCeldaVisitada(Grid currentGrid) {
-        if(!isCeldaVisitada(currentGrid)){
-            Pair celdaVisitada= new Pair<>(currentGrid.getX(),currentGrid.getY());
-            //Lo metemos en el HashMap  celdas vistadas
-            celdasVisitadas.put(celdaVisitada,currentGrid);
-            //LLamamos al metodo de clase que hace que incremente el numero de celdas visitadas
-            //Para asi tener un conteo de ellas
-            this.incExploredGrids();
-        }
-    }
     /**
      *   Metodo utilizado para  devolver los posibles nodos hijos como un arraylist de casillas
      *
@@ -221,15 +190,124 @@ public class M23E04_bpl extends Mouse  {
             System.err.println(e.getMessage());
         }
         if (gridsHijos.size()==0)
-            System.err.printf("ERROR SIN HIJOS para celda %s\n",casilla);
+            System.err.printf("ERROR SIN HIJOS para celda %s\n",casilla.getX(),casilla.getY());
         return gridsHijos;
 
     }
 
 
     /**
+     * Metodo de inserccion de celdas cerradas
+     */
+    private void insertaCerradas(Grid currentGrid) {
+        celdasCerradas.put(new Pair<>(currentGrid.getX(), currentGrid.getY()),currentGrid);
+    }
+
+
+    /**
+     * Metodo para darle la vuelta al camino
+     * @param  stack
+     */
+    public static Stack<Grid> revertirStack(Stack<Grid> stack) {
+
+        Stack<Grid> stackRevertido = new Stack<>();
+        while (!stack.isEmpty()) {
+            stackRevertido.push(stack.pop());
+        }
+
+        return stackRevertido;
+
+    }
+
+
+
+    /**
+     * @brief Método que se llama cuando la pila de movimientos o la pila de camino no está vacia
+     * Utilizado tanto en explorar como en la ejecucion de la busqueda
+     *
+     */
+
+    public int actToNext(Grid actual, Grid next){
+        int resultado = 0;
+
+        //Comparamos el movimiento anterior y vemos si va a la izquierda
+        if (actual.getX()-1 == next.getX()){
+            resultado = Mouse.LEFT;
+        }
+        //Comparamos el movimiento anterior y vemos si va a la derecha
+        else if (actual.getX()+1 == next.getX()){
+            resultado =  Mouse.RIGHT;
+        }
+        //Comparamos el movimiento anterior y vemos si va hacia abajo
+        else if (actual.getY()-1 == next.getY()){
+            resultado =  Mouse.DOWN;
+        }
+        //Comparamos el movimiento anterior y vemos si va hacia arriba
+        else if (actual.getY()+1 == next.getY()){
+            resultado =  Mouse.UP;
+        }
+        if (resultado == 0)
+            System.err.printf("ERROR: Sin movimiento en Celda Actual(%d,%d) - Celda Sig(%d,%d)\n",actual.getX(),actual.getY(),next.getX(),next.getY());
+        return resultado;
+    }
+
+
+    /**
+     * @brief Metodo de exploracion del raton
+     *
+     */
+    private int explorar(Grid currentGrid){
+
+        //Crear los posibles movimientos teniendo en cuenta visitadas y lo almacena en posmovi
+        List<Integer> posMovi = creaPosiblesMovimientos(currentGrid);
+        /**
+         * Casos de donde puede estar el raton en funcion de su posicion
+         */
+        return devolvermovimiento(currentGrid,posMovi);
+    }
+
+    /**
+     * @brief Metodo para devolver el momiento del raton durante la exploracion
+     *
+     * Casos:
+     * Caso 1: Inicio  ¿Esta la pila de movimientos vacia?
+     * Caso 2: Encerrado ¿Hay algun movimiento posible?-> Caso de que no
+     * Caso 3: Movimiento normal ¿Hay algun movimiento posible? -> Caso de que Si
+     *
+     */
+    private int devolvermovimiento(Grid currentGrid,List<Integer> posMovi){
+        //region Inicio
+        if(pilaMovimientos.isEmpty()){
+            pilaMovimientos.push(currentGrid);
+            //En funcion de las posibilidades realiza un movimiento aleatorio
+            return posMovi.get(new Random().nextInt(posMovi.size()));
+            //return inicio(currentGrid);
+        }
+        //endregion
+        //Se esta moviendo o esta moviAnteriorPila
+        else{
+            //region ENCERRADO
+            if(posMovi.isEmpty())
+                return actToNext(currentGrid, pilaMovimientos.pop());
+                //Se esta moviendo
+            //endregion
+            //region En Movimiento
+                else{
+                    //Añadimos la Casilla actual  a la pila de movimientos
+                    pilaMovimientos.push(currentGrid);
+                    //Devolvemos el primero movimiento hecho
+                    return posMovi.get(0);
+                }
+            //endregion
+        }
+    }
+
+
+
+    /**
      * @return
      * @brief Método que comprueba los posibles movimientos a partir de su posicion actual
+     *
      */
     private List<Integer>  creaPosiblesMovimientos(Grid currentGrid) {
         //Cada ejecucion la lista de posibles movimientos la limpiamos
@@ -267,40 +345,23 @@ public class M23E04_bpl extends Mouse  {
         return posMovi;
     }
 
+
     /**
-     * @brief Método que se llama cuando la pila de movimientos no está vacia
-     *
+     * Metodo implementados de desde la clase raton
      */
+    @Override
+    public void newCheese() {
+        nuevoQueso = true;
+        //Limpieza arbol
+            celdasCerradas.clear();
+            caminoBusqueda.clear();
+        // ñññ Cuando aparece un nuevo queso si este no estuviera en las celdas visitadas  tendriamos que volver a explorar
+        // ¿sería necesario reiniciar la pila de movimientos de la exploración? Parece que no que
+        //movimientosEnExploracion.clear();
 
-    public int actToNext(Grid actual, Grid next){
-        int resultado = 0;
-
-        //Comparamos el movimiento anterior y vemos si va a la izquierda
-        if (actual.getX()-1 == next.getX()){
-            resultado = Mouse.LEFT;
-        }
-        //Comparamos el movimiento anterior y vemos si va a la derecha
-        else if (actual.getX()+1 == next.getX()){
-            resultado =  Mouse.RIGHT;
-        }
-        //Comparamos el movimiento anterior y vemos si va hacia abajo
-        else if (actual.getY()-1 == next.getY()){
-            resultado =  Mouse.DOWN;
-        }
-        //Comparamos el movimiento anterior y vemos si va hacia arriba
-        else if (actual.getY()+1 == next.getY()){
-            resultado =  Mouse.UP;
-        }
-        if (resultado == 0)
-            System.err.printf("ERROR: Sin movimiento en Celda Actual(%d,%d) - Celda Sig(%d,%d)\n",actual.getX(),actual.getY(),next.getX(),next.getY());
-        return resultado;
     }
-
-
-
     @Override
     public void respawned() {
-
     }
     
 }
