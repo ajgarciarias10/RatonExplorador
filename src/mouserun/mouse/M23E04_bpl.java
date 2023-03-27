@@ -59,38 +59,30 @@ public class M23E04_bpl extends Mouse  {
                 //camino.clear();
                 nuevoQueso = false;
                 //Calcular busqueda
-                int multiplicador=0;
-                do {
+                int multiplicador=1;
+                while(!busquedaProfundidadLimitada(currentGrid,cheese, MAX_PROFUNDIDAD*multiplicador)){
                     multiplicador++;
-                } while (!busquedaProfundidadLimitada(currentGrid,cheese, MAX_PROFUNDIDAD*multiplicador)); // Warning: bucle sin fin
+                }
             }
-            System.out.println(camino.peek());
             return actToNext(currentGrid,camino.pop()); // Ejecutar busqueda
         }
     }
 
     @Override
     public void newCheese() {
-        if(primerQueso){
-            nuevoQueso = false;
-            primerQueso = false;
-        }else{
             nuevoQueso = true;
-        }
+            celdasCerradas.clear();
+
     }
 
     private Boolean busquedaProfundidadLimitada(Grid currentGrid, Cheese cheese,int profundidadMax) {
-        camino.push(currentGrid);
-        try {
+            insertaCerradas(currentGrid);
+            camino.push(currentGrid);
             if(busquedaprofundidadBis(currentGrid,cheese,profundidadMax)){
                 camino = revertirStack(camino);
                 return  true;
             }
             else return false;
-        }catch ( IllegalArgumentException a){
-            System.err.println(a.getMessage());
-        }
-        return  false;
     }
 
     public static Stack<Grid> revertirStack(Stack<Grid> stack) {
@@ -115,13 +107,13 @@ public class M23E04_bpl extends Mouse  {
             // HEMOS PASADO LA PROFUNDIDAD
             return false;
         }
-
-        insertaCerradas(currentGrid);
         ArrayList<Grid> posCasillas = obtenerHijos(currentGrid);
         for (Grid casillasHijo : posCasillas) {
             camino.push(casillasHijo);
             // MARCAR LA CELDA COMO VISITADA
-            celdasVisitadas.put(new Pair<>(casillasHijo.getX(), casillasHijo.getY()),casillasHijo);
+            insertaCerradas(casillasHijo);
+            //celdasVisitadas.put(new Pair<>(casillasHijo.getX(), casillasHijo.getY()),casillasHijo);
+
 
             if(busquedaprofundidadBis(casillasHijo,cheese,profundidad-1)){
                 return true;
@@ -205,22 +197,22 @@ public class M23E04_bpl extends Mouse  {
         try {
             Grid casillaHaciaArriba = new Grid(casilla.getX(), casilla.getY()+1);
             if (casilla.canGoUp() && celdasVisitadas.containsKey(casillaHaciaArriba) && !celdasCerradas.containsKey(casillaHaciaArriba)){
-                gridsHijos.add(casillaHaciaArriba);
+                gridsHijos.add(celdasVisitadas.get(casillaHaciaArriba));
             }
             //Caso2 Puede mover para abajo
             Grid casillaHaciaAbajo = new Grid(casilla.getX(), casilla.getY()-1);
             if (casilla.canGoDown() && celdasVisitadas.containsKey(casillaHaciaAbajo) && !celdasCerradas.containsKey(casillaHaciaAbajo)){
-                gridsHijos.add(casillaHaciaAbajo);
+                gridsHijos.add(celdasVisitadas.get(casillaHaciaAbajo));
             }
             //Caso3 Puede mover para la izquierda
             Grid casillaHaciaIzq = new Grid(casilla.getX() -1, casilla.getY());
             if (casilla.canGoLeft() && celdasVisitadas.containsKey(casillaHaciaIzq) && !celdasCerradas.containsKey(casillaHaciaIzq)){
-                gridsHijos.add(casillaHaciaIzq);
+                gridsHijos.add(celdasVisitadas.get(casillaHaciaIzq));
             }
             Grid casillaHaciaDerec = new Grid(casilla.getX() +1, casilla.getY());
             //Caso4 Puede mover para la derecha
             if (casilla.canGoRight() && celdasVisitadas.containsKey(casillaHaciaDerec) && !celdasCerradas.containsKey(casillaHaciaDerec)){
-                gridsHijos.add(casillaHaciaDerec);
+                gridsHijos.add(celdasVisitadas.get(casillaHaciaDerec));
             }
 
 
