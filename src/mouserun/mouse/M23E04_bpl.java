@@ -1,49 +1,53 @@
 package mouserun.mouse;
+import mouserun.game.Cheese;
+import mouserun.game.Grid;
+import mouserun.game.Mouse;
 
-import mouserun.functions.Pair;
-import mouserun.game.*;
 import java.util.*;
+
 public class M23E04_bpl extends Mouse  {
 
     /**
-     * HashMap de Celdas Cerradas
-     */
-    private final HashMap<Pair<Integer, Integer>, Grid> celdasCerradas ;
-    /**
      * Definimos la profundidad Maxima
      */
-    private static final int MAX_PROFUNDIDAD = 20;
+    private static final int MAX_PROFUNDIDAD = 500;
     /**
      * Nuevo queso util para cuando se cambie el queso
      */
     private   boolean nuevoQueso;
 
-   /**
-            * Tabla hash para almacenar las celdas visitadas por el raton:
-            * Clave:Coordenadas Valor: La celda
-    */
-    private final HashMap<Pair<Integer, Integer>, Grid> celdasVisitadas ;
+    /**
+     * Tabla hash para almacenar las celdas visitadas por el raton:
+     * Clave:Coordenadas Valor: La celda
+     */
+    private final HashMap<Pair<Integer, Integer>, Grid> celdasVisitadas;
+    private final HashMap<Pair<Integer, Integer>, Grid> celdasAprendidas;
 
     /**
-     * Pila para almacenar el camino recorrido.
+     * Pila que contiene todos los movimientos del ratón, util para que cuando se encierre sepa desandar lo recorrido
      */
     private final Stack<Grid> pilaMovimientos ;
 
     /**
-     * Pila de nodos camino
+     * Pila con camino a recorrer después de realizar una busqueda
      */
-
     private Stack<Grid> caminoBusqueda ;
+    /**
+     * HashMap de Celdas Cerradas durante la búsqueda
+     */
+    private final HashMap<Pair<Integer, Integer>, Grid> celdasCerradasEnBusqueda;
+    private boolean busquedaProfundidadFallida = false;
 
     /**
      * Constructor
      */
     public M23E04_bpl() {
-        super("Ratón Vacilon");
+        super("Mouse XD");
         celdasVisitadas = new HashMap<>();
+        celdasAprendidas = new HashMap<>();
         pilaMovimientos = new Stack<>();
         caminoBusqueda = new Stack<>();
-        celdasCerradas = new HashMap<>();
+        celdasCerradasEnBusqueda = new HashMap<>();
     }
 
     /**
@@ -51,39 +55,49 @@ public class M23E04_bpl extends Mouse  {
      */
     @Override
     public int move(Grid currentGrid, Cheese cheese) {
-        //region Comprueba con el metodo isCeldaVisit y la marca
+        pilaMovimientos.push(currentGrid);
+        insertaEnCeldasAprendidas(currentGrid);
+
+        // ¿Posicion del queso conocida?
+        if(!celdasAprendidas.containsKey(new Pair<>(cheese.getX(),cheese.getY()))){
             insertaCeldaVisitada(currentGrid);
-        //endregion
-        //region ¿Posicion del queso conocida?
-        if(!celdasVisitadas.containsKey(new Pair<>(cheese.getX(),cheese.getY()))){
-            return explorar(currentGrid);
+            return explorar(currentGrid,true);
         }
-        //endregion
-        //region Calculo + Ejecucion
         else {
             //region Calculo Recursivo
-                if(nuevoQueso){
-                    nuevoQueso = false;
-                    //Calcular busqueda
-                    int multiplicador=1;
-                    while(!busquedaProfundidadLimitada(currentGrid,cheese, MAX_PROFUNDIDAD*multiplicador)){
-                        multiplicador++;
-                    }
-                }
+            if(nuevoQueso || busquedaProfundidadFallida){
+                nuevoQueso = false;
+
+                if (busquedaProfundidadFallida=!busquedaProfundidadLimitada(currentGrid,cheese, MAX_PROFUNDIDAD))
+                    caminoBusqueda.clear();
+            }
             //endregion
-            //region Ejecucion del calculo
-                return actToNext(currentGrid, caminoBusqueda.pop()); // Ejecutar busqueda
-            //endregion
+            if (!caminoBusqueda.isEmpty())
+                return dameMovimiento(currentGrid, caminoBusqueda.pop());
+            else {
+                return explorar(currentGrid,false);
+            }
         }
-       //endregion
+        //endregion
     }
 
+    private void insertaEnCeldasAprendidas(Grid currentGrid) {
+        if (!celdasAprendidas.containsKey(newPair(currentGrid))) {
+            celdasAprendidas.put(newPair(currentGrid), currentGrid);
+            incExploredGrids();
+        }
+    }
+
+
+    private Pair newPair(Grid currentGrid) {
+        return new Pair<>(currentGrid.getX(),currentGrid.getY());
+    }
     /**
      *  Método que comprueba la celda visitada
      */
 
     private boolean isCeldaVisitada(Grid currentGrid) {
-        return celdasVisitadas.containsKey(new Pair<>(currentGrid.getX(),currentGrid.getY()));
+        return celdasVisitadas.containsKey(newPair(currentGrid));
     }
     /**
      * @brief Primer método utilizado insertar celda visitada
@@ -91,12 +105,10 @@ public class M23E04_bpl extends Mouse  {
      */
     private void insertaCeldaVisitada(Grid currentGrid) {
         if(!isCeldaVisitada(currentGrid)){
-            Pair celdaVisitada= new Pair<>(currentGrid.getX(),currentGrid.getY());
             //Lo metemos en el HashMap  celdas vistadas
-            celdasVisitadas.put(celdaVisitada,currentGrid);
+            celdasVisitadas.put(newPair(currentGrid),currentGrid);
             //LLamamos al metodo de clase que hace que incremente el numero de celdas visitadas
             //Para asi tener un conteo de ellas
-            this.incExploredGrids();
         }
     }
 
@@ -108,16 +120,18 @@ public class M23E04_bpl extends Mouse  {
      * @return
      */
     private Boolean busquedaProfundidadLimitada(Grid currentGrid, Cheese cheese,int profundidadMax) {
+        // cuando lanzo la busqueda inicializo la pila y la lista de cerradas
+        caminoBusqueda.clear();
+        celdasCerradasEnBusqueda.clear();
         //Insertamos la casilla actual en el camino
-        caminoBusqueda.push(currentGrid);
+        //caminoBusqueda.push(currentGrid);
         //Cerrar nodo
-        insertaCerradas(currentGrid);
+        insertarCerradasEnBusqueda(currentGrid);
         if(busquedaprofundidadBis(currentGrid,cheese,profundidadMax)){
             caminoBusqueda = revertirStack(caminoBusqueda);
             return  true;
         }
         else {
-            System.err.printf("WARNING: Profundidad %d - ¿BUCLE INFINITO?\n",profundidadMax);
             return false;
         }
     }
@@ -138,17 +152,16 @@ public class M23E04_bpl extends Mouse  {
             // HEMOS PASADO LA PROFUNDIDAD
             return false;
         }
-        ArrayList<Grid> casillasHijos = obtenerHijos(currentGrid);
+        List<Grid> casillasHijos = obtenerHijos(currentGrid);
         for (Grid casillaHijo : casillasHijos) {
             caminoBusqueda.push(casillaHijo);
             // MARCAR LA CELDA COMO VISITADA
-            insertaCerradas(casillaHijo);
+            insertarCerradasEnBusqueda(casillaHijo);
             if(busquedaprofundidadBis(casillaHijo,cheese,profundidad-1))
                 return true;
             else caminoBusqueda.pop();
         }
-        System.out.printf("Profundidad %d - Celda actual (%d,%d) - pila actual (%d,%d)\n",profundidad,currentGrid.getX(),currentGrid.getY(),caminoBusqueda.peek().getX(),caminoBusqueda.peek().getY());
-        return !caminoBusqueda.isEmpty();
+        return false;
     }
 
 
@@ -164,45 +177,44 @@ public class M23E04_bpl extends Mouse  {
      *   Metodo utilizado para  devolver los posibles nodos hijos como un arraylist de casillas
      *
      */
-    ArrayList<Grid> obtenerHijos(Grid casilla) {
-        ArrayList<Grid> gridsHijos = new ArrayList<>();
+    List<Grid> obtenerHijos(Grid casilla) {
+        List<Grid> gridsHijos = new ArrayList<>();
         try {
             Pair keyHaciaArriba= new Pair<>(casilla.getX(),casilla.getY()+1);
-            if (casilla.canGoUp() && celdasVisitadas.containsKey(keyHaciaArriba) && !celdasCerradas.containsKey(keyHaciaArriba)){
-                gridsHijos.add(celdasVisitadas.get(keyHaciaArriba));
+            if (casilla.canGoUp() && celdasAprendidas.containsKey(keyHaciaArriba) && !celdasCerradasEnBusqueda.containsKey(keyHaciaArriba)){
+                gridsHijos.add(celdasAprendidas.get(keyHaciaArriba));
             }
             //Caso2 Puede mover para abajo
             Pair keyHaciaAbajo= new Pair<>(casilla.getX(),casilla.getY()-1);
-            if (casilla.canGoDown() && celdasVisitadas.containsKey(keyHaciaAbajo) && !celdasCerradas.containsKey(keyHaciaAbajo)){
-                gridsHijos.add(celdasVisitadas.get(keyHaciaAbajo));
+            if (casilla.canGoDown() && celdasAprendidas.containsKey(keyHaciaAbajo) && !celdasCerradasEnBusqueda.containsKey(keyHaciaAbajo)){
+                gridsHijos.add(celdasAprendidas.get(keyHaciaAbajo));
             }
             //Caso3 Puede mover para la izquierda
             Pair keyHaciaIzq= new Pair<>(casilla.getX()-1,casilla.getY());
-            if (casilla.canGoLeft() && celdasVisitadas.containsKey(keyHaciaIzq) && !celdasCerradas.containsKey(keyHaciaIzq)){
-                gridsHijos.add(celdasVisitadas.get(keyHaciaIzq));
+            if (casilla.canGoLeft() && celdasAprendidas.containsKey(keyHaciaIzq) && !celdasCerradasEnBusqueda.containsKey(keyHaciaIzq)){
+                gridsHijos.add(celdasAprendidas.get(keyHaciaIzq));
             }
             Pair keyHaciaDerec= new Pair<>(casilla.getX()+1,casilla.getY());
             //Caso4 Puede mover para la derecha
-            if (casilla.canGoRight() && celdasVisitadas.containsKey(keyHaciaDerec) && !celdasCerradas.containsKey(keyHaciaDerec)){
-                gridsHijos.add(celdasVisitadas.get(keyHaciaDerec));
+            if (casilla.canGoRight() && celdasAprendidas.containsKey(keyHaciaDerec) && !celdasCerradasEnBusqueda.containsKey(keyHaciaDerec)){
+                gridsHijos.add(celdasAprendidas.get(keyHaciaDerec));
             }
         }catch (Exception e){
             System.err.println(e.getMessage());
         }
-        if (gridsHijos.size()==0)
-            System.err.printf("ERROR SIN HIJOS para celda %s\n",casilla.getX(),casilla.getY());
+
         return gridsHijos;
 
     }
 
 
     /**
-     * Metodo de inserccion de celdas cerradas
+     * Metodo de inserccion de celdas cerradas durante la busqueda
      */
-    private void insertaCerradas(Grid currentGrid) {
-        celdasCerradas.put(new Pair<>(currentGrid.getX(), currentGrid.getY()),currentGrid);
-    }
 
+    private void insertarCerradasEnBusqueda(Grid currentGrid) {
+        celdasCerradasEnBusqueda.put(new Pair<>(currentGrid.getX(), currentGrid.getY()),currentGrid);
+    }
 
     /**
      * Metodo para darle la vuelta al camino
@@ -222,12 +234,10 @@ public class M23E04_bpl extends Mouse  {
 
 
     /**
-     * @brief Método que se llama cuando la pila de movimientos o la pila de camino no está vacia
-     * Utilizado tanto en explorar como en la ejecucion de la busqueda
-     *
+     * @brief Método que nos indica el movimiento del ratón para ir a celda @param next desde celda @param actual
      */
 
-    public int actToNext(Grid actual, Grid next){
+    public int dameMovimiento(Grid actual, Grid next){
         int resultado = 0;
 
         //Comparamos el movimiento anterior y vemos si va a la izquierda
@@ -246,9 +256,21 @@ public class M23E04_bpl extends Mouse  {
         else if (actual.getY()+1 == next.getY()){
             resultado =  Mouse.UP;
         }
-        if (resultado == 0)
-            System.err.printf("ERROR: Sin movimiento en Celda Actual(%d,%d) - Celda Sig(%d,%d)\n",actual.getX(),actual.getY(),next.getX(),next.getY());
+
         return resultado;
+    }
+    public Pair<Integer, Integer> damePair(Grid actual,int movimiento){
+        switch (movimiento){
+            case UP: return new Pair<>(actual.getX(),actual.getY()+1);
+            case DOWN: return new Pair<>(actual.getX(),actual.getY()-1);
+            case LEFT: return new Pair<>(actual.getX()-1,actual.getY());
+            case RIGHT: return new Pair<>(actual.getX()+1,actual.getY());
+            default: {
+                System.err.printf("ERROR: No puedo moverme aggghhhh. Celda Actual(%d,%d)\n",actual.getX(),actual.getY());
+                return new Pair<>(actual.getX(),actual.getY());
+            }
+
+        }
     }
 
 
@@ -256,14 +278,14 @@ public class M23E04_bpl extends Mouse  {
      * @brief Metodo de exploracion del raton
      *
      */
-    private int explorar(Grid currentGrid){
-
+    private int explorar(Grid currentGrid,boolean mirarCeldaVisitada){
+        //pilaMovimientos.push(currentGrid);
         //Crear los posibles movimientos teniendo en cuenta visitadas y lo almacena en posmovi
-        List<Integer> posMovi = creaPosiblesMovimientos(currentGrid);
+        List<Integer> listaMovimientos = creaPosiblesMovimientos(currentGrid, mirarCeldaVisitada);
         /**
          * Casos de donde puede estar el raton en funcion de su posicion
          */
-        return devolvermovimiento(currentGrid,posMovi);
+        return devolvermovimiento(currentGrid,listaMovimientos,mirarCeldaVisitada);
     }
 
     /**
@@ -275,33 +297,43 @@ public class M23E04_bpl extends Mouse  {
      * Caso 3: Movimiento normal ¿Hay algun movimiento posible? -> Caso de que Si
      *
      */
-    private int devolvermovimiento(Grid currentGrid,List<Integer> posMovi){
-        //region Inicio
-        if(pilaMovimientos.isEmpty()){
-            pilaMovimientos.push(currentGrid);
-            //En funcion de las posibilidades realiza un movimiento aleatorio
-            return posMovi.get(new Random().nextInt(posMovi.size()));
-            //return inicio(currentGrid);
-        }
-        //endregion
-        //Se esta moviendo o esta moviAnteriorPila
-        else{
-            //region ENCERRADO
-            if(posMovi.isEmpty())
-                return actToNext(currentGrid, pilaMovimientos.pop());
-                //Se esta moviendo
-            //endregion
-            //region En Movimiento
-                else{
-                    //Añadimos la Casilla actual  a la pila de movimientos
-                    pilaMovimientos.push(currentGrid);
-                    //Devolvemos el primero movimiento hecho
-                    return posMovi.get(0);
-                }
-            //endregion
+    private int devolvermovimiento(Grid currentGrid, List<Integer> listaMovimientos, boolean mirarCeldaVisitada){
+        if (listaMovimientos.isEmpty()) { // si ocurre esto es porque nos hemos encerrado
+            return retrocede(currentGrid);
+        } else {
+            if (mirarCeldaVisitada)
+                return listaMovimientos.get(0);
+            else {
+                return movimientoPorBusquedaFallida(currentGrid, listaMovimientos);
+            }
         }
     }
 
+    private int movimientoPorBusquedaFallida(Grid currentGrid, List<Integer> listaMovimientos) {
+        // estamos en el caso de querer movernos cuando ha fallado la búsqueda y queremos ir al cualquier casilla donde cumpla:
+        // 1. que sea hija de la actual: todas las hijo de la currentGrid ya están en listaMovimientos
+        // 2. que sea una celdaAprendida, pues ya tuvo que estar antes en ella, porque sino, la búsqueda no se habría lanzado
+        // 3. y que no sea de donde ha venido, porque si vuelvo ahí estamos retrocediendo y no avanzando
+        pilaMovimientos.pop(); // sacamos el actual para conocer el anterior
+        int movParaIrALaAnterior= dameMovimiento(currentGrid,pilaMovimientos.peek());
+        pilaMovimientos.push(currentGrid); // volvemos a dejar bien donde estamos
+        Collections.shuffle(listaMovimientos); // podemos meter un movimiento aleatorio por si hay más de uno valido
+        for (int movimiento: listaMovimientos){
+            if (movimiento!=movParaIrALaAnterior && celdasAprendidas.containsKey(damePair(currentGrid,movimiento)))
+                return movimiento;
+        }
+        // si se ejecuta esta linea mal vamos
+        return listaMovimientos.get((int) (Math.random() * listaMovimientos.size()));
+    }
+
+
+
+    private int retrocede(Grid currentGrid) {
+        pilaMovimientos.pop();
+        if (pilaMovimientos.isEmpty())
+            System.err.printf("ERROR en celda (%d,%d): Pila de movimientos vacía\n", currentGrid.getX(), currentGrid.getY());
+        return dameMovimiento(currentGrid, pilaMovimientos.pop());
+    }
 
 
     /**
@@ -309,35 +341,35 @@ public class M23E04_bpl extends Mouse  {
      * @brief Método que comprueba los posibles movimientos a partir de su posicion actual
      *
      */
-    private List<Integer>  creaPosiblesMovimientos(Grid currentGrid) {
+    private List<Integer>  creaPosiblesMovimientos(Grid currentGrid, boolean mirarCeldaVisitada) {
         //Cada ejecucion la lista de posibles movimientos la limpiamos
         List<Integer>  posMovi= new ArrayList<>();
         //region Casos de posibles movimientos
         //Caso 1 (En caso de que vaya hacia arriba "y+1" )
         //Comprobamos si la casilla actual puede ir hacia arriba
         //Y si no contiene la celda de arriba
-        if (currentGrid.canGoUp() && !celdasVisitadas.containsKey(new Pair<>(currentGrid.getX(), currentGrid.getY() + 1))) {
+        if (currentGrid.canGoUp() && (!mirarCeldaVisitada || !celdasVisitadas.containsKey(new Pair<>(currentGrid.getX(), currentGrid.getY()+1 )))) {
             //Añadimos el movimiento hacia arriba
             posMovi.add(Mouse.UP);
         }
         //Caso 2 (En caso de que vaya hacia abajo "y-1" )
         //Comprobamos si la casilla actual puede ir hacia abajo
         //Y si no contiene la celda de abajo
-        if (currentGrid.canGoDown() && !celdasVisitadas.containsKey(new Pair<>(currentGrid.getX(), currentGrid.getY() - 1))) {
+        if (currentGrid.canGoDown() && (!mirarCeldaVisitada || !celdasVisitadas.containsKey(new Pair<>(currentGrid.getX(), currentGrid.getY()-1)))) {
             //Añadimos el movimiento hacia a abajo
             posMovi.add(Mouse.DOWN);
         }
         //Caso 3 (En caso de que vaya hacia la derecha  "x+1" )
         //Comprobamos si la casilla actual puede ir hacia derecha
         //Y si no contiene la celda de derecha
-        if (currentGrid.canGoRight() && !celdasVisitadas.containsKey(new Pair<>(currentGrid.getX() + 1, currentGrid.getY()))) {
+        if (currentGrid.canGoRight() && (!mirarCeldaVisitada || !celdasVisitadas.containsKey(new Pair<>(currentGrid.getX()+1, currentGrid.getY())))) {
             //Añadimos el movimiento hacia la derecha
             posMovi.add(Mouse.RIGHT);
         }
         //Caso 4 (En caso de que vaya hacia la izquierda  "x-1" )
         //Comprobamos si la casilla actual puede ir hacia izquierda
         //Y si no contiene la celda de izquierda
-        if (currentGrid.canGoLeft() && !celdasVisitadas.containsKey(new Pair<>(currentGrid.getX() - 1, currentGrid.getY()))) {
+        if (currentGrid.canGoLeft() && (!mirarCeldaVisitada || !celdasVisitadas.containsKey(new Pair<>(currentGrid.getX()-1, currentGrid.getY())))) {
             //Añadimos el movimiento hacia la izquierda
             posMovi.add(Mouse.LEFT);
         }
@@ -352,18 +384,66 @@ public class M23E04_bpl extends Mouse  {
     @Override
     public void newCheese() {
         nuevoQueso = true;
-        //Limpieza arbol
-            celdasCerradas.clear();
-            caminoBusqueda.clear();
-        // ñññ Cuando aparece un nuevo queso si este no estuviera en las celdas visitadas  tendriamos que volver a explorar
-        // ¿sería necesario reiniciar la pila de movimientos de la exploración? Parece que no que
-        //movimientosEnExploracion.clear();
-
+        // lobotomizando
+        celdasVisitadas.clear();
     }
     @Override
     public void respawned() {
+        caminoBusqueda.clear();
     }
-    
+
+    /**
+     *
+     * @author josema
+     * @param <U> First field (key) in a Pair
+     * @param <V> Second field (value) in a Pair
+     */
+// Pair class
+     class Pair<U, V> {
+
+        public final U first;       // el primer campo de un par
+        public final V second;      // el segundo campo de un par
+
+        // Construye un nuevo par con valores especificados
+        public Pair(U first, V second) {
+            this.first = first;
+            this.second = second;
+        }
+
+        @Override
+        // Verifica que el objeto especificado sea "igual a" el objeto actual o no
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            Pair<?, ?> pair = (Pair<?, ?>) o;
+
+            // llamar al método `equals()` de los objetos subyacentes
+            if (!first.equals(pair.first)) {
+                return false;
+            }
+            return second.equals(pair.second);
+        }
+
+        @Override
+        // Calcula el código hash de un objeto para admitir tablas hash
+        public int hashCode() {
+            // usa códigos hash de los objetos subyacentes
+            return 31 * first.hashCode() + second.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return "(" + first + ", " + second + ")";
+        }
+
+    }
+
 }
 
 
