@@ -10,7 +10,7 @@ public class M23E04_extra extends Mouse  {
     /**
      * Definimos la profundidad Maxima
      */
-    private static final int MAX_PROFUNDIDAD = 150;
+    private static final int MAX_PROFUNDIDAD = 300;
     /**
      * Nuevo queso util para cuando se cambie el queso
      */
